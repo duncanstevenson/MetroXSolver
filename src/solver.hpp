@@ -48,13 +48,15 @@ public:
         precalculate();
     }
 
-    Solution solve() {
+    Solution solve(bool verbose = true) {
         auto start_time = std::chrono::high_resolution_clock::now();
         
         // Phase 1: Fast Beam Search to establish a strong lower bound (LB)
         run_beam_search(3000);
-        std::cout << "[Solver] Warm-start Beam Search finished with score: " 
-                  << best_score << " (LB established)\n";
+        if (verbose) {
+            std::cout << "[Solver] Warm-start Beam Search finished with score: " 
+                      << best_score << " (LB established)\n";
+        }
 
         // Phase 2: Depth-First Branch and Bound (DFBnB)
         BoardState initial_state;

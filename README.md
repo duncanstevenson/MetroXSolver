@@ -55,13 +55,23 @@ Using `g++` (C++20):
 g++ -O3 -std=c++20 -I src src/main.cpp -o metrox_solver.exe
 ```
 
-### Running a Scenario
+### Running a Scenario (CLI)
 ```bash
 # Default mode (allows voluntary underfilling if beneficial)
 .\metrox_solver.exe scenarios/sample_game.txt
 
 # Strict mode: forces maximal fill (disallows voluntary short uses)
 .\metrox_solver.exe scenarios/sample_game.txt --strict
-# or:
-.\metrox_solver.exe scenarios/sample_game.txt --disable-short-use
 ```
+
+---
+
+## Interactive Web UI Studio
+
+A web-based interface is included for entering game states, clicking transit cards into a queue, adjusting opponent deadlines, and viewing the optimal playbook.
+
+To start the studio:
+```bash
+python server.py
+```
+Then open your browser to **`http://localhost:8000`**.
