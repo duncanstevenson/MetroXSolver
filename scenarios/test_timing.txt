@@ -1,0 +1,18 @@
+[MAP]
+LineA | 2 | 6 | 3 | S1 S2 S3 S4 S10 S5
+LineB | 3 | 8 | 4 | S6 S3 S7 S8 S9
+LineC | 2 | 7 | 3 | S11 S12 S7 S10 S13
+LineD | 2 | 6 | 3 | S14 S15 S7 S16 S17
+LineE | 3 | 8 | 4 | S18 S14 S19 S20 S21
+LineF | 2 | 7 | 3 | S22 S23 S20 S10 S24
+LineG | 2 | 6 | 3 | S25 S26 S20 S27 S28
+LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32
+
+[OPPONENTS]
+# Tightened opponent finish turns
+LineA : 5
+LineC : 8
+LineE : 10
+
+[TURNS]
+3 4 S2 T 5 FREE 6 2 S3 T 4 3 5 2 4 3 2 4 3

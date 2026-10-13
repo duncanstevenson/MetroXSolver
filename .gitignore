@@ -1,0 +1,26 @@
+# Binaries and build outputs
+*.exe
+*.o
+*.obj
+*.dll
+*.so
+*.dylib
+build/
+bin/
+
+# Temporary / image / rules assets
+*.pdf
+*.jpg
+*.jpeg
+*.png
+MetroX_rules_English.pdf
+london_map.jpg
+metrox_sheet.jpg
+
+# IDE / Editor configurations
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
