@@ -1,0 +1,25 @@
+# ===================================================================
+# METRO X - TUBE TOWN MAP (Official Gamewright Map)
+# ===================================================================
+
+[MAP]
+# Format: RouteName | Windows | GoldBonus | SilverBonus | StationIDs (Start -> End)
+LineJ | 3 | 6 | 4 | J1 J2 S_JK S_JL S_JM J5 S_JO J7 S_JR J9
+LineK | 2 | 3 | 2 | K1 S_JK K3 S_KL S_KM K5 S_KO
+LineL | 3 | 4 | 2 | L1 S_JL S_KL L4 S_LM L6 S_LO S_LR S_TERM_L
+LineM | 2 | 5 | 3 | M1 M2 S_MN M4 S_JM S_KM S_LM M7 S_MO S_MR S_TERM_M
+LineN | 2 | 2 | 1 | N1 N2 S_MN N4 N5 N6 S_NO N8
+LineO | 3 | 4 | 2 | O1 O2 S_JO S_KO S_LO S_MO S_NO O7 S_TERM_O
+LineP | 2 | 4 | 2 | P1 P2 S_PQ P4 S_PR P6 P7 S_TERM_P
+LineQ | 2 | 4 | 2 | Q1 S_PQ Q3 Q4 S_QR Q6 S_TERM_Q
+LineR | 4 | 7 | 5 | R1 R2 S_PR S_QR R5 S_JR S_LR S_MR R8 R9 R10 S_TERM_R
+
+[SETTINGS]
+allow_short_use: true
+
+[OPPONENTS]
+# Enter turn numbers when opponents complete routes (e.g. LineJ : 7)
+
+[TURNS]
+# Enter transit cards sequence here
+3 4 S2 T 5 FREE 6 2 S3 T 4 3 5 2 4 3 2 4 3

@@ -28,9 +28,14 @@
       </div>
     </div>
     <div class="flex items-center space-x-3">
-      <button id="btn-load-sample" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
-        Load Sample Map
-      </button>
+      <div class="flex items-center gap-2">
+        <label for="select-map-preset" class="text-xs text-slate-400 font-medium">Preset:</label>
+        <select id="select-map-preset" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 focus:outline-none focus:border-teal-500 transition cursor-pointer">
+          <option value="metro_city" selected>Metro City (Official)</option>
+          <option value="tube_town">Tube Town (Official)</option>
+          <option value="sample">Sample Test Map</option>
+        </select>
+      </div>
       <button id="btn-export-txt" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition">
         Export .txt
       </button>
@@ -172,22 +177,61 @@
   </main>
 
   <script>
-    // State management
-    let rawMapText = `LineA | 2 | 6 | 3 | S1 S2 S3 S4 S10 S5
+    const MAP_PRESETS = {
+      metro_city: {
+        name: "Metro City (Official)",
+        raw: `LineA | 2 | 2 | 1 | A1 A2 S_AB1 S_AB2 S_AB3 S_AC S_AD S_AE S_AFG
+LineB | 2 | 4 | 2 | B1 S_AB1 S_AB2 S_AB3 B4 S_BC B5 B6 S_BE B7 B8 S_TERM_B
+LineC | 3 | 7 | 5 | C1 C2 S_AC C3 S_CD C4 C5 S_CE C6 S_CF C7 C8 S_TERM_C
+LineD | 3 | 5 | 3 | D1 D2 S_AD S_CD D3 D4 S_DF D5 D6 D7 S_TERM_D
+LineE | 3 | 4 | 2 | E1 E2 S_AE S_BE S_CE E3 E4 E5 E6 S_TERM_E
+LineF | 2 | 4 | 2 | F1 S_AFG F2 S_CF S_DF F3 F4 F5 S_TERM_F
+LineG | 2 | 5 | 3 | G1 G2 S_AFG G3 G4 G5 G6 G7 G8 S_TERM_G
+LineH | 3 | 6 | 4 | H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 S_TERM_H
+LineI | 3 | 4 | 2 | I1 I2 I3 I4 I5 I6 I7 I8 S_TERM_I`,
+        opponents: { "LineA": 6, "LineC": 10 }
+      },
+      tube_town: {
+        name: "Tube Town (Official)",
+        raw: `LineJ | 3 | 6 | 4 | J1 J2 S_JK S_JL S_JM J5 S_JO J7 S_JR J9
+LineK | 2 | 3 | 2 | K1 S_JK K3 S_KL S_KM K5 S_KO
+LineL | 3 | 4 | 2 | L1 S_JL S_KL L4 S_LM L6 S_LO S_LR S_TERM_L
+LineM | 2 | 5 | 3 | M1 M2 S_MN M4 S_JM S_KM S_LM M7 S_MO S_MR S_TERM_M
+LineN | 2 | 2 | 1 | N1 N2 S_MN N4 N5 N6 S_NO N8
+LineO | 3 | 4 | 2 | O1 O2 S_JO S_KO S_LO S_MO S_NO O7 S_TERM_O
+LineP | 2 | 4 | 2 | P1 P2 S_PQ P4 S_PR P6 P7 S_TERM_P
+LineQ | 2 | 4 | 2 | Q1 S_PQ Q3 Q4 S_QR Q6 S_TERM_Q
+LineR | 4 | 7 | 5 | R1 R2 S_PR S_QR R5 S_JR S_LR S_MR R8 R9 R10 S_TERM_R`,
+        opponents: { "LineR": 10, "LineJ": 8 }
+      },
+      sample: {
+        name: "Sample Test Map",
+        raw: `LineA | 2 | 6 | 3 | S1 S2 S3 S4 S10 S5
 LineB | 3 | 8 | 4 | S6 S3 S7 S8 S9
 LineC | 2 | 7 | 3 | S11 S12 S7 S10 S13
 LineD | 2 | 6 | 3 | S14 S15 S7 S16 S17
 LineE | 3 | 8 | 4 | S18 S14 S19 S20 S21
 LineF | 2 | 7 | 3 | S22 S23 S20 S10 S24
 LineG | 2 | 6 | 3 | S25 S26 S20 S27 S28
-LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`;
-
-    let turnsList = ["3", "4", "S2", "T", "5", "FREE", "6", "2", "S3", "T", "4", "3", "5", "2", "4", "3", "2", "4", "3"];
-    let opponentTimings = {
-      "LineA": 8,
-      "LineC": 11,
-      "LineE": 14
+LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`,
+        opponents: { "LineA": 8, "LineC": 11, "LineE": 14 }
+      }
     };
+
+    // State management
+    let currentPreset = 'metro_city';
+    let rawMapText = MAP_PRESETS.metro_city.raw;
+    let opponentTimings = Object.assign({}, MAP_PRESETS.metro_city.opponents);
+    let turnsList = ["3", "4", "S2", "T", "5", "FREE", "6", "2", "S3", "T", "4", "3", "5", "2", "4", "3", "2", "4", "3"];
+
+    function loadPreset(presetKey) {
+      if (!MAP_PRESETS[presetKey]) return;
+      currentPreset = presetKey;
+      rawMapText = MAP_PRESETS[presetKey].raw;
+      opponentTimings = Object.assign({}, MAP_PRESETS[presetKey].opponents);
+      document.getElementById('map-raw-text').value = rawMapText;
+      renderMap();
+    }
 
     function parseMapRoutes(text) {
       const routes = [];
@@ -357,20 +401,9 @@ LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`;
       URL.revokeObjectURL(url);
     });
 
-    // Load sample map
-    document.getElementById('btn-load-sample').addEventListener('click', () => {
-      rawMapText = `LineA | 2 | 6 | 3 | S1 S2 S3 S4 S10 S5
-LineB | 3 | 8 | 4 | S6 S3 S7 S8 S9
-LineC | 2 | 7 | 3 | S11 S12 S7 S10 S13
-LineD | 2 | 6 | 3 | S14 S15 S7 S16 S17
-LineE | 3 | 8 | 4 | S18 S14 S19 S20 S21
-LineF | 2 | 7 | 3 | S22 S23 S20 S10 S24
-LineG | 2 | 6 | 3 | S25 S26 S20 S27 S28
-LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`;
-      turnsList = ["3", "4", "S2", "T", "5", "FREE", "6", "2", "S3", "T", "4", "3", "5", "2", "4", "3", "2", "4", "3"];
-      opponentTimings = { "LineA": 8, "LineC": 11, "LineE": 14 };
-      renderMap();
-      renderTurns();
+    // Select map preset
+    document.getElementById('select-map-preset').addEventListener('change', (e) => {
+      loadPreset(e.target.value);
     });
 
     function renderSolution(data) {

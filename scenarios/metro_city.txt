@@ -1,0 +1,25 @@
+# ===================================================================
+# METRO X - METRO CITY MAP (Official Gamewright Map)
+# ===================================================================
+
+[MAP]
+# Format: RouteName | Windows | GoldBonus | SilverBonus | StationIDs (Start -> End)
+LineA | 2 | 2 | 1 | A1 A2 S_AB1 S_AB2 S_AB3 S_AC S_AD S_AE S_AFG
+LineB | 2 | 4 | 2 | B1 S_AB1 S_AB2 S_AB3 B4 S_BC B5 B6 S_BE B7 B8 S_TERM_B
+LineC | 3 | 7 | 5 | C1 C2 S_AC C3 S_CD C4 C5 S_CE C6 S_CF C7 C8 S_TERM_C
+LineD | 3 | 5 | 3 | D1 D2 S_AD S_CD D3 D4 S_DF D5 D6 D7 S_TERM_D
+LineE | 3 | 4 | 2 | E1 E2 S_AE S_BE S_CE E3 E4 E5 E6 S_TERM_E
+LineF | 2 | 4 | 2 | F1 S_AFG F2 S_CF S_DF F3 F4 F5 S_TERM_F
+LineG | 2 | 5 | 3 | G1 G2 S_AFG G3 G4 G5 G6 G7 G8 S_TERM_G
+LineH | 3 | 6 | 4 | H1 H2 H3 H4 H5 H6 H7 H8 H9 H10 S_TERM_H
+LineI | 3 | 4 | 2 | I1 I2 I3 I4 I5 I6 I7 I8 S_TERM_I
+
+[SETTINGS]
+allow_short_use: true
+
+[OPPONENTS]
+# Enter turn numbers when opponents complete routes (e.g. LineA : 6)
+
+[TURNS]
+# Enter transit cards sequence here
+3 4 S2 T 5 FREE 6 2 S3 T 4 3 5 2 4 3 2 4 3
