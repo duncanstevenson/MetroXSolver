@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Metro X - Game State & Solver Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="metrox_engine.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Inter', sans-serif; }
@@ -372,7 +373,78 @@ LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`;
       renderTurns();
     });
 
-    // Solve via backend API
+    function renderSolution(data) {
+      const statusEl = document.getElementById('solver-status');
+      const playbookEl = document.getElementById('playbook-container');
+
+      // Show badges & metrics
+      document.getElementById('score-badge').classList.remove('hidden');
+      document.getElementById('score-badge').textContent = `${data.total_score} PTS`;
+      document.getElementById('metrics-grid').classList.remove('hidden');
+
+      document.getElementById('metric-routes').textContent = `+${data.route_score}`;
+      document.getElementById('metric-transfers').textContent = `+${data.transfer_score}`;
+      document.getElementById('metric-penalty').textContent = `${data.penalty} (${data.empty_stations} left)`;
+      document.getElementById('metric-time').textContent = `${Math.round(data.search_time_ms)} ms`;
+
+      statusEl.textContent = `Completed in ${Math.round(data.search_time_ms)} ms (${data.states_evaluated.toLocaleString()} states evaluated)`;
+      statusEl.className = "text-xs text-emerald-400 font-medium";
+
+      // Render playbook
+      playbookEl.innerHTML = '';
+      data.playbook.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs flex flex-col gap-1';
+        
+        let cardBadge = `<span class="px-2 py-0.5 rounded font-bold bg-blue-600/20 text-blue-300 border border-blue-500/30">${item.card}</span>`;
+        if (item.card.startsWith('S')) cardBadge = `<span class="px-2 py-0.5 rounded font-bold bg-amber-600/20 text-amber-300 border border-amber-500/30">${item.card}</span>`;
+        if (item.card === 'TRANSFER' || item.card === 'T') cardBadge = `<span class="px-2 py-0.5 rounded font-bold bg-purple-600/20 text-purple-300 border border-purple-500/30">TRANS</span>`;
+        if (item.card === 'FREE') cardBadge = `<span class="px-2 py-0.5 rounded font-bold bg-emerald-600/20 text-emerald-300 border border-emerald-500/30">FREE</span>`;
+
+        let actionHtml = '';
+        if (item.card === 'FREE') {
+          actionHtml = `<span class="text-slate-300">Marked Station: <strong class="text-white">${item.marked_stations.join(', ')}</strong></span>`;
+        } else {
+          actionHtml = `<span class="text-slate-400">Route: <strong class="text-white">${item.route}</strong></span>`;
+          if (item.is_transfer) {
+            actionHtml += ` <span class="text-purple-400 font-bold ml-2">★ TRANSFER on ${item.transfer_station} (+${item.transfer_points} pts)</span>`;
+          } else if (item.marked_stations.length === 0) {
+            actionHtml += ` <span class="text-slate-500 ml-2 italic">(Burned window)</span>`;
+          } else {
+            actionHtml += ` <span class="text-slate-300 ml-2">Marked: [${item.marked_stations.join(', ')}]</span>`;
+          }
+        }
+
+        let bonusHtml = '';
+        if (item.completed_routes && item.completed_routes.length > 0) {
+          item.completed_routes.forEach(cr => {
+            const badgeStyle = cr.is_gold 
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' 
+              : 'bg-slate-700 text-slate-200 border-slate-600';
+            bonusHtml += `
+              <div class="mt-1 px-2.5 py-1 rounded-lg border ${badgeStyle} text-xs font-semibold flex items-center justify-between">
+                <span>🏆 Completed <strong>${cr.route}</strong>!</span>
+                <span>${cr.is_gold ? 'GOLD DIAMOND' : 'SILVER SQUARE'} (+${cr.bonus} pts)</span>
+              </div>
+            `;
+          });
+        }
+
+        row.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="mono text-slate-500 font-bold">Turn ${item.turn}</span>
+              ${cardBadge}
+              ${actionHtml}
+            </div>
+          </div>
+          ${bonusHtml}
+        `;
+        playbookEl.appendChild(row);
+      });
+    }
+
+    // Solve via client-side engine (with backend fallback)
     document.getElementById('btn-solve').addEventListener('click', async () => {
       if (turnsList.length === 0) {
         alert("Please add at least one transit card to the turns sequence.");
@@ -380,12 +452,27 @@ LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`;
       }
 
       const statusEl = document.getElementById('solver-status');
-      const playbookEl = document.getElementById('playbook-container');
       statusEl.textContent = "Computing optimal placements...";
       statusEl.className = "text-xs text-amber-400 font-semibold animate-pulse";
 
       const scenarioText = buildScenarioString();
+      const strict = document.getElementById('setting-strict').checked;
 
+      // 1. Try pure client-side JavaScript engine (works on GitHub Pages, offline, zero server needed)
+      if (typeof MetroXEngine !== 'undefined' && MetroXEngine.solveMetroX) {
+        try {
+          // Wrap in setTimeout to allow UI to render the 'Computing...' state
+          setTimeout(() => {
+            const data = MetroXEngine.solveMetroX(scenarioText, { allow_short_use: !strict });
+            renderSolution(data);
+          }, 20);
+          return;
+        } catch (err) {
+          console.warn("Client-side solver threw an error, trying backend API...", err);
+        }
+      }
+
+      // 2. Fallback to backend API if running via server.py
       try {
         const response = await fetch('/api/solve', {
           method: 'POST',
@@ -398,75 +485,9 @@ LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`;
         }
 
         const data = await response.json();
-        
-        // Show badges & metrics
-        document.getElementById('score-badge').classList.remove('hidden');
-        document.getElementById('score-badge').textContent = `${data.total_score} PTS`;
-        document.getElementById('metrics-grid').classList.remove('hidden');
-
-        document.getElementById('metric-routes').textContent = `+${data.route_score}`;
-        document.getElementById('metric-transfers').textContent = `+${data.transfer_score}`;
-        document.getElementById('metric-penalty').textContent = `${data.penalty} (${data.empty_stations} left)`;
-        document.getElementById('metric-time').textContent = `${Math.round(data.search_time_ms)} ms`;
-
-        statusEl.textContent = `Completed in ${Math.round(data.search_time_ms)} ms (${data.states_evaluated.toLocaleString()} states evaluated)`;
-        statusEl.className = "text-xs text-emerald-400 font-medium";
-
-        // Render playbook
-        playbookEl.innerHTML = '';
-        data.playbook.forEach(item => {
-          const row = document.createElement('div');
-          row.className = 'p-3 rounded-xl bg-slate-900 border border-slate-800 text-xs flex flex-col gap-1';
-          
-          let cardBadge = `<span class="px-2 py-0.5 rounded font-bold bg-blue-600/20 text-blue-300 border border-blue-500/30">${item.card}</span>`;
-          if (item.card.startsWith('S')) cardBadge = `<span class="px-2 py-0.5 rounded font-bold bg-amber-600/20 text-amber-300 border border-amber-500/30">${item.card}</span>`;
-          if (item.card === 'TRANSFER' || item.card === 'T') cardBadge = `<span class="px-2 py-0.5 rounded font-bold bg-purple-600/20 text-purple-300 border border-purple-500/30">TRANS</span>`;
-          if (item.card === 'FREE') cardBadge = `<span class="px-2 py-0.5 rounded font-bold bg-emerald-600/20 text-emerald-300 border border-emerald-500/30">FREE</span>`;
-
-          let actionHtml = '';
-          if (item.card === 'FREE') {
-            actionHtml = `<span class="text-slate-300">Marked Station: <strong class="text-white">${item.marked_stations.join(', ')}</strong></span>`;
-          } else {
-            actionHtml = `<span class="text-slate-400">Route: <strong class="text-white">${item.route}</strong></span>`;
-            if (item.is_transfer) {
-              actionHtml += ` <span class="text-purple-400 font-bold ml-2">★ TRANSFER on ${item.transfer_station} (+${item.transfer_points} pts)</span>`;
-            } else if (item.marked_stations.length === 0) {
-              actionHtml += ` <span class="text-slate-500 ml-2 italic">(Burned window)</span>`;
-            } else {
-              actionHtml += ` <span class="text-slate-300 ml-2">Marked: [${item.marked_stations.join(', ')}]</span>`;
-            }
-          }
-
-          let bonusHtml = '';
-          if (item.completed_routes && item.completed_routes.length > 0) {
-            item.completed_routes.forEach(cr => {
-              const badgeStyle = cr.is_gold 
-                ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' 
-                : 'bg-slate-700 text-slate-200 border-slate-600';
-              bonusHtml += `
-                <div class="mt-1 px-2.5 py-1 rounded-lg border ${badgeStyle} text-xs font-semibold flex items-center justify-between">
-                  <span>🏆 Completed <strong>${cr.route}</strong>!</span>
-                  <span>${cr.is_gold ? 'GOLD DIAMOND' : 'SILVER SQUARE'} (+${cr.bonus} pts)</span>
-                </div>
-              `;
-            });
-          }
-
-          row.innerHTML = `
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <span class="mono text-slate-500 font-bold">Turn ${item.turn}</span>
-                ${cardBadge}
-                ${actionHtml}
-              </div>
-            </div>
-            ${bonusHtml}
-          `;
-          playbookEl.appendChild(row);
-        });
-
+        renderSolution(data);
       } catch (err) {
-        statusEl.textContent = "Error running solver. Make sure local server is running.";
+        statusEl.textContent = "Error running solver.";
         statusEl.className = "text-xs text-rose-400 font-semibold";
         alert("Failed to run solver: " + err.message);
       }

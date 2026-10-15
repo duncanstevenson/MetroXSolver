@@ -66,12 +66,51 @@ g++ -O3 -std=c++20 -I src src/main.cpp -o metrox_solver.exe
 
 ---
 
-## Interactive Web UI Studio
+## Interactive Web UI Studio & Client-Side Engine
 
-A web-based interface is included for entering game states, clicking transit cards into a queue, adjusting opponent deadlines, and viewing the optimal playbook.
+A web-based interface and standalone JavaScript solver are included in [`ui/`](ui/). It runs **100% in the browser** with zero dependencies, making it ready for **GitHub Pages (`github.io`)** or embedding into any other site.
 
-To start the studio:
+### Running Locally (Zero Server Needed)
+You can directly double-click or open [`ui/index.html`](ui/index.html) in any web browser, or serve it with Python:
 ```bash
 python server.py
 ```
-Then open your browser to **`http://localhost:8000`**.
+Then visit **`http://localhost:8000`**.
+
+---
+
+## Importing into Another Repository
+
+You can easily integrate this project into your main website or portfolio repository in two ways:
+
+### Option A: Import as a Git Submodule
+If you want to keep this repo as a submodule inside another repository:
+```bash
+git submodule add https://github.com/<your-username>/metrox.git metrox
+```
+Then embed the UI via an `<iframe>` or link to `metrox/ui/index.html`:
+```html
+<iframe src="metrox/ui/index.html" class="w-full h-[800px] border-none"></iframe>
+```
+
+### Option B: Use the Pure JavaScript Solver Library (`ui/metrox_engine.js`)
+If you have an existing React, Vue, Next.js, or vanilla JS site in another repo, copy [`ui/metrox_engine.js`](ui/metrox_engine.js). It has zero dependencies and works with both ES Modules and standard `<script>` tags:
+
+```javascript
+// Via script tag:
+// <script src="metrox_engine.js"></script>
+
+const scenario = `
+[MAP]
+LineA | 2 | 6 | 3 | S1 S2 S3 S4
+LineB | 2 | 6 | 3 | S5 S2 S6
+
+[TURNS]
+3 4
+`;
+
+// Instant client-side solve (< 50ms):
+const solution = MetroXEngine.solveMetroX(scenario, { allow_short_use: true });
+console.log("Max Score:", solution.total_score);
+console.log("Playbook:", solution.playbook);
+```
