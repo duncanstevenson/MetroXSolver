@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Metro X JavaScript Engine Tests</title>
+  <style>
+    body { font-family: monospace; background: #0f172a; color: #f8fafc; padding: 2rem; }
+    h1 { color: #38bdf8; font-size: 1.5rem; margin-bottom: 1rem; }
+    .passed { color: #4ade80; }
+    .failed { color: #f87171; font-weight: bold; }
+    pre { background: #1e293b; padding: 1.5rem; border-radius: 8px; border: 1px solid #334155; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <h1>Metro X - JavaScript Automated Test Suite</h1>
+  <pre id="output">Running tests...</pre>
+
+  <script src="../ui/metrox_engine.js"></script>
+  <script src="test.js"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const result = window.MetroXTests.runAll();
+      const outputEl = document.getElementById('output');
+      outputEl.textContent = result.output;
+      if (result.failed === 0) {
+        outputEl.className = 'passed';
+      } else {
+        outputEl.className = 'failed';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -53,12 +53,7 @@ inline Card parse_card_token(const std::string& token) {
     return Card{CardType::NUMBER, val};
 }
 
-inline Scenario load_scenario(const std::string& filepath) {
-    std::ifstream file(filepath);
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open scenario file: " + filepath);
-    }
-
+inline Scenario parse_scenario_stream(std::istream& is) {
     Scenario scenario;
     std::string line;
     std::string current_section = "";
@@ -76,7 +71,7 @@ inline Scenario load_scenario(const std::string& filepath) {
     };
     std::vector<RawRoute> raw_routes;
 
-    while (std::getline(file, line)) {
+    while (std::getline(is, line)) {
         line = trim(line);
         if (line.empty() || line[0] == '#' || (line.size() >= 2 && line.substr(0, 2) == "//")) {
             continue;
@@ -183,4 +178,17 @@ inline Scenario load_scenario(const std::string& filepath) {
     }
 
     return scenario;
+}
+
+inline Scenario parse_scenario_string(const std::string& text) {
+    std::istringstream iss(text);
+    return parse_scenario_stream(iss);
+}
+
+inline Scenario load_scenario(const std::string& filepath) {
+    std::ifstream file(filepath);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open scenario file: " + filepath);
+    }
+    return parse_scenario_stream(file);
 }

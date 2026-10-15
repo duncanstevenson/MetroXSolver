@@ -127,6 +127,7 @@ private:
         return k;
     }
 
+public:
     int compute_upper_bound(const BoardState& state, int turn) {
         int ub = state.route_score + state.transfer_score;
         int turn_1based = turn + 1;
@@ -335,6 +336,7 @@ private:
         return moves;
     }
 
+private:
     BoardState apply_move(const BoardState& state, int turn, Move& move) {
         BoardState next = state;
         int turn_1based = turn + 1;

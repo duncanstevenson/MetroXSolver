@@ -114,3 +114,25 @@ const solution = MetroXEngine.solveMetroX(scenario, { allow_short_use: true });
 console.log("Max Score:", solution.total_score);
 console.log("Playbook:", solution.playbook);
 ```
+
+---
+
+## Automated Tests
+
+Both the C++ optimizer and JavaScript engine include matching test suites covering game mechanics, card parsing, transfer hub scoring, voluntary underfilling, upper-bound dead route pruning with Free cards, and solver parity.
+
+### Run All Tests (Unified Runner)
+```bash
+python run_tests.py
+```
+This automatically compiles and executes the C++ test suite, runs the JavaScript test suite (via Node.js or headless browser), and reports unified pass/fail results.
+
+### Run C++ Tests Directly
+```bash
+g++ -O3 -std=c++20 -I src tests/test_cpp.cpp -o tests/test_cpp.exe
+.\tests\test_cpp.exe
+```
+
+### Run JavaScript Tests Directly
+- **Node.js:** `node tests/test.js`
+- **Browser:** Open [`tests/test_js.html`](tests/test_js.html) in any browser.
