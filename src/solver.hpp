@@ -98,15 +98,19 @@ private:
     static constexpr uint64_t MAX_STATES_BUDGET = 250000;
     std::unordered_map<StateKey, int, StateKeyHash> transposition_table;
 
-    // Precalculated remaining transfer counts per turn
+    // Precalculated remaining transfer and free card counts per turn
     std::vector<int> remaining_transfers;
+    std::vector<int> remaining_free_cards;
 
     void precalculate() {
         int T = (int)scenario.turns.size();
         remaining_transfers.assign(T + 1, 0);
+        remaining_free_cards.assign(T + 1, 0);
         for (int i = T - 1; i >= 0; --i) {
             remaining_transfers[i] = remaining_transfers[i + 1] + 
                 (scenario.turns[i].type == CardType::TRANSFER ? 1 : 0);
+            remaining_free_cards[i] = remaining_free_cards[i + 1] + 
+                (scenario.turns[i].type == CardType::FREE ? 1 : 0);
         }
     }
 
@@ -130,9 +134,9 @@ private:
         // 1. Max remaining route bonuses (prune routes that can never be completed)
         for (const auto& r : map.routes) {
             if (!(state.completed_routes_mask & (1U << r.id))) {
-                // If route has no windows left, can it still be completed by other intersecting lines?
+                // If route has no windows left, can it still be completed by other intersecting lines or free cards?
                 if (state.windows_used[r.id] >= r.max_windows) {
-                    bool can_complete = true;
+                    int free_needed = 0;
                     for (int sid : r.stations) {
                         if (!state.stations_marked.test(sid)) {
                             bool has_open_route = false;
@@ -144,12 +148,13 @@ private:
                                 }
                             }
                             if (!has_open_route) {
-                                can_complete = false;
-                                break;
+                                free_needed++;
                             }
                         }
                     }
-                    if (!can_complete) continue; // Route cannot be completed, omit bonus!
+                    if (free_needed > remaining_free_cards[turn]) {
+                        continue; // Route cannot be completed even with all remaining Free cards!
+                    }
                 }
 
                 if (turn_1based <= scenario.opponent_finish_turns[r.id]) {

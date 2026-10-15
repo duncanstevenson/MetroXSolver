@@ -179,9 +179,12 @@
 
       const T = this.scenario.turns.length;
       this.remainingTransfers = new Array(T + 1).fill(0);
+      this.remainingFreeCards = new Array(T + 1).fill(0);
       for (let i = T - 1; i >= 0; --i) {
         this.remainingTransfers[i] = this.remainingTransfers[i + 1] + 
           (this.scenario.turns[i].type === 'TRANSFER' ? 1 : 0);
+        this.remainingFreeCards[i] = this.remainingFreeCards[i + 1] + 
+          (this.scenario.turns[i].type === 'FREE' ? 1 : 0);
       }
 
       this.bestScore = -9999;
@@ -210,12 +213,12 @@
       let ub = state.route_score + state.transfer_score;
       const turn1Based = turn + 1;
 
-      // 1. Incomplete route bonuses (pruning impossible routes)
+      // 1. Incomplete route bonuses (pruning impossible routes, accounting for free cards)
       for (let i = 0; i < this.map.routes.length; ++i) {
         if (!(state.completed_routes_mask & (1 << i))) {
           const r = this.map.routes[i];
           if (state.windows_used[i] >= r.max_windows) {
-            let canComplete = true;
+            let freeNeeded = 0;
             for (const sid of r.stations) {
               if (!((state.stations_marked >> BigInt(sid)) & 1n)) {
                 let hasOpen = false;
@@ -227,12 +230,11 @@
                   }
                 }
                 if (!hasOpen) {
-                  canComplete = false;
-                  break;
+                  freeNeeded++;
                 }
               }
             }
-            if (!canComplete) continue;
+            if (freeNeeded > this.remainingFreeCards[turn]) continue;
           }
 
           const oppTurn = this.scenario.opponent_finish_turns[i];
