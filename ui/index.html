@@ -59,7 +59,10 @@
             <h2 class="text-base font-semibold text-white">Opponent Completion Timings</h2>
             <p class="text-xs text-slate-400">Turn an opponent completed the route (empty = no one finished)</p>
           </div>
-          <span class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400">1-indexed</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs px-2 py-1 rounded bg-slate-800 text-slate-400">1-indexed</span>
+            <button id="btn-clear-opponents" class="text-xs text-rose-400 hover:text-rose-300 font-semibold px-2 py-1 rounded hover:bg-rose-950/30 transition">Clear</button>
+          </div>
         </div>
         <div id="opponents-list" class="space-y-2.5 max-h-56 overflow-y-auto pr-1">
           <!-- Populated dynamically -->
@@ -289,6 +292,7 @@ LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`,
             <input type="number" min="1" max="50" placeholder="None" value="${currentTurnVal}"
                    data-route="${r.name}"
                    class="opp-input w-16 px-2 py-1 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white text-center focus:outline-none focus:border-teal-500">
+            <button class="btn-clear-single-opp text-slate-500 hover:text-rose-400 text-sm px-1 py-0.5 rounded leading-none transition" data-route="${r.name}" title="Clear timing">&times;</button>
           </div>
         `;
         oppContainer.appendChild(oppRow);
@@ -304,6 +308,16 @@ LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`,
           } else {
             opponentTimings[rName] = parseInt(val);
           }
+        });
+      });
+
+      // Bind single opp clear buttons
+      document.querySelectorAll('.btn-clear-single-opp').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const rName = e.currentTarget.dataset.route;
+          delete opponentTimings[rName];
+          const input = document.querySelector(`.opp-input[data-route="${rName}"]`);
+          if (input) input.value = '';
         });
       });
     }
@@ -372,6 +386,14 @@ LineH | 3 | 9 | 4 | S29 S28 S10 S30 S31 S32`,
     document.getElementById('btn-clear-turns').addEventListener('click', () => {
       turnsList = [];
       renderTurns();
+    });
+
+    // Clear all opponent timings
+    document.getElementById('btn-clear-opponents').addEventListener('click', () => {
+      opponentTimings = {};
+      document.querySelectorAll('.opp-input').forEach(inp => {
+        inp.value = '';
+      });
     });
 
     // Generate scenario string
