@@ -95,6 +95,7 @@ private:
     } best_solution_breakdown;
 
     uint64_t states_evaluated = 0;
+    static constexpr uint64_t MAX_STATES_BUDGET = 250000;
     std::unordered_map<StateKey, int, StateKeyHash> transposition_table;
 
     // Precalculated remaining transfer counts per turn
@@ -126,9 +127,31 @@ private:
         int ub = state.route_score + state.transfer_score;
         int turn_1based = turn + 1;
 
-        // 1. Max remaining route bonuses
+        // 1. Max remaining route bonuses (prune routes that can never be completed)
         for (const auto& r : map.routes) {
             if (!(state.completed_routes_mask & (1U << r.id))) {
+                // If route has no windows left, can it still be completed by other intersecting lines?
+                if (state.windows_used[r.id] >= r.max_windows) {
+                    bool can_complete = true;
+                    for (int sid : r.stations) {
+                        if (!state.stations_marked.test(sid)) {
+                            bool has_open_route = false;
+                            for (const auto& other_r : map.routes) {
+                                if (other_r.id != r.id && other_r.mask.test(sid) && 
+                                    state.windows_used[other_r.id] < other_r.max_windows) {
+                                    has_open_route = true;
+                                    break;
+                                }
+                            }
+                            if (!has_open_route) {
+                                can_complete = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (!can_complete) continue; // Route cannot be completed, omit bonus!
+                }
+
                 if (turn_1based <= scenario.opponent_finish_turns[r.id]) {
                     ub += r.gold_bonus;
                 } else {
@@ -343,6 +366,9 @@ private:
     }
 
     void dfbnb(BoardState state, int turn, std::vector<Move>& current_path) {
+        if (states_evaluated >= MAX_STATES_BUDGET) {
+            return; // Search budget reached; preserve best solution found!
+        }
         states_evaluated++;
 
         // Base case: end of turn sequence

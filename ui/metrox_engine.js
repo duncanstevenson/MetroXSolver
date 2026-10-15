@@ -210,9 +210,31 @@
       let ub = state.route_score + state.transfer_score;
       const turn1Based = turn + 1;
 
-      // 1. Incomplete route bonuses
+      // 1. Incomplete route bonuses (pruning impossible routes)
       for (let i = 0; i < this.map.routes.length; ++i) {
         if (!(state.completed_routes_mask & (1 << i))) {
+          const r = this.map.routes[i];
+          if (state.windows_used[i] >= r.max_windows) {
+            let canComplete = true;
+            for (const sid of r.stations) {
+              if (!((state.stations_marked >> BigInt(sid)) & 1n)) {
+                let hasOpen = false;
+                for (let o = 0; o < this.map.routes.length; ++o) {
+                  if (o !== i && ((this.map.routes[o].mask >> BigInt(sid)) & 1n) &&
+                      state.windows_used[o] < this.map.routes[o].max_windows) {
+                    hasOpen = true;
+                    break;
+                  }
+                }
+                if (!hasOpen) {
+                  canComplete = false;
+                  break;
+                }
+              }
+            }
+            if (!canComplete) continue;
+          }
+
           const oppTurn = this.scenario.opponent_finish_turns[i];
           if (turn1Based <= oppTurn) {
             ub += this.map.routes[i].gold_bonus;
@@ -508,6 +530,7 @@
     }
 
     dfbnb(state, turn, currentPath) {
+      if (this.statesEvaluated >= 200000) return;
       this.statesEvaluated++;
 
       if (turn === this.scenario.turns.length) {
